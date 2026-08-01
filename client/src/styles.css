@@ -1,0 +1,110 @@
+/* Styling is explicitly not evaluated in this assignment - this is the minimum
+   needed to keep the data readable. */
+
+:root {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px;
+  color: #1c1c1e;
+  background: #f6f6f7;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+
+main {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+}
+
+h1 { font-size: 1.5rem; margin: 0 0 4px; }
+h2 { font-size: 1rem; margin: 0 0 12px; }
+
+.muted { color: #6b6b70; }
+.small { font-size: 0.85rem; }
+.right { text-align: right; }
+.nowrap { white-space: nowrap; }
+
+.tabs { display: flex; gap: 4px; margin: 20px 0 16px; }
+.tab {
+  border: 1px solid #d5d5da;
+  background: #fff;
+  /* Must reset the colour the global `button` rule sets, or the inactive tabs
+     render white-on-white. */
+  color: #1c1c1e;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.tab.active { background: #1c1c1e; color: #fff; border-color: #1c1c1e; }
+
+.card {
+  background: #fff;
+  border: 1px solid #e2e2e6;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.card.warn { border-color: #e0a800; background: #fffdf3; }
+
+.row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.grow { flex: 1 1 200px; }
+
+label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: #45454a; }
+input, select {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid #cfcfd4;
+  border-radius: 5px;
+  background: #fff;
+}
+input.amount { width: 96px; text-align: right; }
+
+button {
+  font: inherit;
+  padding: 7px 14px;
+  border: 1px solid #1c1c1e;
+  background: #1c1c1e;
+  color: #fff;
+  border-radius: 5px;
+  cursor: pointer;
+}
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button.link {
+  background: none;
+  border: none;
+  color: #0b64c4;
+  padding: 4px;
+  text-decoration: underline;
+}
+button.link.danger { color: #c0392b; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid #e2e2e6;
+  border-radius: 8px;
+  overflow: hidden;
+}
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #eeeef1; }
+th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; color: #6b6b70; }
+tr:last-child td { border-bottom: none; }
+tr.editing { background: #f3f8ff; }
+tr.over { background: #fff5f4; }
+
+.badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+.badge.danger { background: #fde2df; color: #a5281a; font-weight: 600; }
+.badge.ok { background: #e4f5e7; color: #256b33; }
+
+.error {
+  background: #fde2df;
+  color: #a5281a;
+  border: 1px solid #f2b8b1;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 12px 0;
+}
+
+.pagination { display: flex; align-items: center; gap: 16px; margin-top: 14px; }
+.total { margin: 0 0 0 auto; font-size: 1rem; }
