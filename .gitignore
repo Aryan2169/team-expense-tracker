@@ -6,3 +6,7 @@ dist/
 *.db-shm
 .DS_Store
 *.log
+
+# Local-only build transcript: contains machine paths and unrelated private
+# project names. Not for the public repo.
+BUILD-TRANSCRIPT.md
