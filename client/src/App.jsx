@@ -35,7 +35,6 @@ export default function App() {
     <main>
       <header>
         <h1>Team Expense Tracker</h1>
-        <p className="muted">Shared expenses for one team. No login — everyone sees the same data.</p>
       </header>
 
       <nav className="tabs">
