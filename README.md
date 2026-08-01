@@ -55,8 +55,8 @@ default in SQLite, which makes it easy to ship a schema whose constraints do not
 categories                          expenses
 ----------                          --------
 id                    PK            id            PK
-name                  UNIQUE        amount_cents  > 0
-monthly_budget_cents  NULLable      description   non-empty
+name                  UNIQUE        amount_paise  > 0
+monthly_budget_paise  NULLable      description   non-empty
 created_at                          category_id   FK -> categories(id) ON DELETE RESTRICT
                                     spent_on      'YYYY-MM-DD'
                                     created_at
@@ -65,9 +65,10 @@ created_at                          category_id   FK -> categories(id) ON DELETE
 Indexes: `expenses(spent_on)` for date-range filters, and `expenses(category_id, spent_on)` so a
 category-plus-range query stays in one index.
 
-**Money is stored as an integer number of cents.** Floating point money accumulates rounding error
-under `SUM()`, and `0.1 + 0.2 !== 0.3` in any IEEE-754 language. Cents in, cents summed, divided by
-100 only at the API boundary.
+**Money is stored as an integer number of paise.** Floating point money accumulates rounding error
+under `SUM()`, and `0.1 + 0.2 !== 0.3` in any IEEE-754 language. Paise in, paise summed, divided by
+100 only at the API boundary. Amounts are Indian rupees throughout; the UI formats with the `en-IN`
+locale, so grouping is `₹1,23,456.00`.
 
 **Dates are `TEXT` in ISO `YYYY-MM-DD`.** SQLite has no date type; ISO strings sort and range-compare
 lexicographically, so `spent_on BETWEEN ? AND ?` uses the index.
@@ -124,7 +125,7 @@ Two details worth pointing out:
 - `new Date('2026-02-30')` does **not** throw — it silently rolls over to March 2nd. A regex alone
   isn't enough, so parsed dates are round-tripped and required to come back identical.
 - Amounts are converted with `Math.round(n * 100)`, not truncation: `19.99 * 100` is
-  `1998.9999999999998` in IEEE-754, and truncating would quietly charge the team a cent less.
+  `1998.9999999999998` in IEEE-754, and truncating would quietly charge the team a paisa less.
 
 ### 2. Summary totals are aggregated in SQL
 
@@ -132,22 +133,22 @@ One `GROUP BY` in [`server/src/routes/summary.js`](server/src/routes/summary.js)
 the counts, **and** the over-budget flag. No expense rows are ever fetched to be summed in JavaScript.
 
 ```sql
-SELECT c.id, c.name, c.monthly_budget_cents,
-       COALESCE(SUM(e.amount_cents), 0) AS total_cents,
+SELECT c.id, c.name, c.monthly_budget_paise,
+       COALESCE(SUM(e.amount_paise), 0) AS total_paise,
        COUNT(e.id)                      AS expense_count,
-       CASE WHEN c.monthly_budget_cents IS NOT NULL
-             AND COALESCE(SUM(e.amount_cents), 0) > c.monthly_budget_cents
+       CASE WHEN c.monthly_budget_paise IS NOT NULL
+             AND COALESCE(SUM(e.amount_paise), 0) > c.monthly_budget_paise
             THEN 1 ELSE 0 END           AS over_budget
 FROM categories c
 LEFT JOIN expenses e
   ON e.category_id = c.id AND e.spent_on >= @from AND e.spent_on <= @to
-GROUP BY c.id, c.name, c.monthly_budget_cents
-ORDER BY total_cents DESC
+GROUP BY c.id, c.name, c.monthly_budget_paise
+ORDER BY total_paise DESC
 ```
 
 - It's a `LEFT JOIN` with the date window in the **`ON`** clause, not `WHERE`. In `WHERE` the join
   filters away categories with no spend in that month, so they'd vanish from the summary instead of
-  showing `$0.00` — usually the row you most want to see.
+  showing `₹0.00` — usually the row you most want to see.
 - The window **defaults to the current month**, because the budget is a *monthly* budget. Comparing
   an all-time total against a monthly budget would flag every category as over, eventually, and mean
   nothing.

@@ -43,7 +43,7 @@ export default function ExpenseForm({ categories, onCreated }) {
           <input
             type="text"
             inputMode="decimal"
-            placeholder="24.50"
+            placeholder="450.00"
             value={form.amount}
             onChange={set('amount')}
           />

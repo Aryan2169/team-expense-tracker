@@ -20,12 +20,12 @@ const summaryQuery = db.prepare(`
   SELECT
     c.id,
     c.name,
-    c.monthly_budget_cents,
-    COALESCE(SUM(e.amount_cents), 0) AS total_cents,
+    c.monthly_budget_paise,
+    COALESCE(SUM(e.amount_paise), 0) AS total_paise,
     COUNT(e.id)                      AS expense_count,
     CASE
-      WHEN c.monthly_budget_cents IS NOT NULL
-       AND COALESCE(SUM(e.amount_cents), 0) > c.monthly_budget_cents
+      WHEN c.monthly_budget_paise IS NOT NULL
+       AND COALESCE(SUM(e.amount_paise), 0) > c.monthly_budget_paise
       THEN 1 ELSE 0
     END AS over_budget
   FROM categories c
@@ -33,8 +33,8 @@ const summaryQuery = db.prepare(`
     ON e.category_id = c.id
    AND e.spent_on >= @from
    AND e.spent_on <= @to
-  GROUP BY c.id, c.name, c.monthly_budget_cents
-  ORDER BY total_cents DESC, c.name COLLATE NOCASE
+  GROUP BY c.id, c.name, c.monthly_budget_paise
+  ORDER BY total_paise DESC, c.name COLLATE NOCASE
 `);
 
 summaryRouter.get('/', (req, res) => {
@@ -50,26 +50,26 @@ summaryRouter.get('/', (req, res) => {
 
   // Adding up the already-aggregated per-category rows (one row per category,
   // dozens at most) - not the expense rows, which never leave the database.
-  const totalCents = rows.reduce((sum, r) => sum + r.total_cents, 0);
+  const totalPaise = rows.reduce((sum, r) => sum + r.total_paise, 0);
 
   res.json({
     range,
     month: q.from || q.to ? null : (q.month ?? currentMonth()),
-    total_spend: totalCents / 100,
-    total_spend_cents: totalCents,
+    total_spend: totalPaise / 100,
+    total_spend_paise: totalPaise,
     data: rows.map((r) => ({
       category_id: r.id,
       name: r.name,
-      total: r.total_cents / 100,
-      total_cents: r.total_cents,
+      total: r.total_paise / 100,
+      total_paise: r.total_paise,
       expense_count: r.expense_count,
-      monthly_budget: r.monthly_budget_cents === null ? null : r.monthly_budget_cents / 100,
-      monthly_budget_cents: r.monthly_budget_cents,
+      monthly_budget: r.monthly_budget_paise === null ? null : r.monthly_budget_paise / 100,
+      monthly_budget_paise: r.monthly_budget_paise,
       over_budget: r.over_budget === 1,
       remaining:
-        r.monthly_budget_cents === null
+        r.monthly_budget_paise === null
           ? null
-          : (r.monthly_budget_cents - r.total_cents) / 100,
+          : (r.monthly_budget_paise - r.total_paise) / 100,
     })),
   });
 });

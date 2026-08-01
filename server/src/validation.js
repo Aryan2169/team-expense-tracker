@@ -25,9 +25,10 @@ const dateString = z
   .string()
   .refine(isRealDate, 'must be a real calendar date in YYYY-MM-DD format');
 
-// Cap at $10,000,000 - large enough for any real expense, small enough that a
-// fat-fingered or hostile value can't overflow the SUM() in the summary.
-const MAX_CENTS = 1_000_000_000;
+// Cap at ₹1,00,00,000 (one crore) - large enough for any real expense, small
+// enough that a fat-fingered or hostile value can't overflow the SUM() in the
+// summary.
+const MAX_PAISE = 1_000_000_000;
 
 /**
  * Accepts 12, "12", "12.5", "12.50". Rejects 0, negatives, NaN, Infinity, and
@@ -35,9 +36,9 @@ const MAX_CENTS = 1_000_000_000;
  * 10.999 to 11.00 is worse than telling them).
  *
  * Math.round on the scaled value, not parseFloat truncation: (19.99 * 100) is
- * 1998.9999999999998 in IEEE-754, and | 0 would charge the team a cent less.
+ * 1998.9999999999998 in IEEE-754, and | 0 would charge the team a paisa less.
  */
-export const amountToCents = z
+export const amountToPaise = z
   .union([z.number(), z.string().trim().min(1)], {
     errorMap: () => ({ message: 'is required and must be a number' }),
   })
@@ -52,12 +53,12 @@ export const amountToCents = z
     if (Math.round(n * 100) !== Number((n * 100).toFixed(4))) {
       return fail('must have at most 2 decimal places');
     }
-    const cents = Math.round(n * 100);
-    if (cents > MAX_CENTS) return fail('is unrealistically large');
-    return cents;
+    const paise = Math.round(n * 100);
+    if (paise > MAX_PAISE) return fail('is unrealistically large');
+    return paise;
   });
 
-const budgetToCents = z
+const budgetToPaise = z
   .union([z.number(), z.string().trim()])
   .transform((v, ctx) => {
     if (v === '' || v === null) return null;
@@ -71,9 +72,9 @@ const budgetToCents = z
     if (Math.round(n * 100) !== Number((n * 100).toFixed(4))) {
       return fail('must have at most 2 decimal places');
     }
-    const cents = Math.round(n * 100);
-    if (cents > MAX_CENTS) return fail('is unrealistically large');
-    return cents;
+    const paise = Math.round(n * 100);
+    if (paise > MAX_PAISE) return fail('is unrealistically large');
+    return paise;
   })
   .nullable();
 
@@ -88,13 +89,13 @@ const id = z.coerce
 
 export const createCategorySchema = z.object({
   name: z.string().trim().min(1, 'is required').max(60, 'must be 60 characters or fewer'),
-  monthly_budget: budgetToCents.optional().default(null),
+  monthly_budget: budgetToPaise.optional().default(null),
 });
 
 export const updateCategorySchema = z
   .object({
     name: z.string().trim().min(1, 'cannot be empty').max(60).optional(),
-    monthly_budget: budgetToCents.optional(),
+    monthly_budget: budgetToPaise.optional(),
   })
   .refine((o) => Object.keys(o).length > 0, 'Provide at least one field to update');
 
@@ -103,7 +104,7 @@ export const updateCategorySchema = z
 // ---------------------------------------------------------------------------
 
 export const createExpenseSchema = z.object({
-  amount: amountToCents,
+  amount: amountToPaise,
   description: z
     .string({ required_error: 'is required' })
     .trim()
@@ -115,7 +116,7 @@ export const createExpenseSchema = z.object({
 
 export const updateExpenseSchema = z
   .object({
-    amount: amountToCents.optional(),
+    amount: amountToPaise.optional(),
     description: z.string().trim().min(1, 'cannot be empty').max(200).optional(),
     category_id: id.optional(),
     date: dateString.optional(),

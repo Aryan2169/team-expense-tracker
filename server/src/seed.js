@@ -4,7 +4,7 @@
  * month and the two before it.
  *
  * Deterministic - a fixed PRNG seed means everyone who runs this gets the same
- * database, so "the summary says $X" is reproducible when comparing notes.
+ * database, so "the summary says ₹X" is reproducible when comparing notes.
  *
  *   npm run seed            # only seeds if the tables are empty
  *   npm run reset           # wipes both tables first
@@ -30,12 +30,12 @@ const between = (lo, hi) => lo + Math.floor(rand() * (hi - lo + 1));
 const CATEGORIES = [
   // Budgets chosen so a couple of categories run over in a typical month -
   // otherwise the flag the brief asks for never shows up in a demo.
-  { name: 'Food & Drink', monthly_budget_cents: 40000 },
-  { name: 'Software', monthly_budget_cents: 15000 },
-  { name: 'Travel', monthly_budget_cents: 60000 },
-  { name: 'Office Supplies', monthly_budget_cents: 30000 },
-  { name: 'Team Events', monthly_budget_cents: null },
-  { name: 'Miscellaneous', monthly_budget_cents: null },
+  { name: 'Food & Drink', monthly_budget_paise: 1_500_000 },      // ₹15,000
+  { name: 'Software', monthly_budget_paise: 2_500_000 },          // ₹25,000
+  { name: 'Travel', monthly_budget_paise: 3_000_000 },            // ₹30,000
+  { name: 'Office Supplies', monthly_budget_paise: 1_000_000 },   // ₹10,000
+  { name: 'Team Events', monthly_budget_paise: null },
+  { name: 'Miscellaneous', monthly_budget_paise: null },
 ];
 
 const DESCRIPTIONS = {
@@ -47,14 +47,14 @@ const DESCRIPTIONS = {
   Miscellaneous: ['Courier', 'Parking', 'Bank fee', 'Replacement charger'],
 };
 
-// Rough per-expense range per category, in cents.
+// Rough per-expense range per category, in paise.
 const AMOUNTS = {
-  'Food & Drink': [800, 9500],
-  Software: [1200, 8900],
-  Travel: [2500, 24000],
-  'Office Supplies': [600, 7500],
-  'Team Events': [4000, 30000],
-  Miscellaneous: [300, 4500],
+  'Food & Drink': [20_000, 250_000],       // ₹200 - ₹2,500
+  Software: [100_000, 800_000],            // ₹1,000 - ₹8,000
+  Travel: [50_000, 1_500_000],             // ₹500 - ₹15,000
+  'Office Supplies': [15_000, 400_000],    // ₹150 - ₹4,000
+  'Team Events': [200_000, 2_500_000],     // ₹2,000 - ₹25,000
+  Miscellaneous: [5_000, 150_000],         // ₹50 - ₹1,500
 };
 
 // How many expenses to create per month, per category. 40 a month over three
@@ -104,15 +104,15 @@ const seedAll = db.transaction(() => {
   }
 
   const insertCategory = db.prepare(
-    'INSERT INTO categories (name, monthly_budget_cents) VALUES (?, ?)',
+    'INSERT INTO categories (name, monthly_budget_paise) VALUES (?, ?)',
   );
   const ids = {};
   for (const c of CATEGORIES) {
-    ids[c.name] = insertCategory.run(c.name, c.monthly_budget_cents).lastInsertRowid;
+    ids[c.name] = insertCategory.run(c.name, c.monthly_budget_paise).lastInsertRowid;
   }
 
   const insertExpense = db.prepare(
-    'INSERT INTO expenses (amount_cents, description, category_id, spent_on) VALUES (?, ?, ?, ?)',
+    'INSERT INTO expenses (amount_paise, description, category_id, spent_on) VALUES (?, ?, ?, ?)',
   );
 
   let count = 0;

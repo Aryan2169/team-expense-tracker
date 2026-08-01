@@ -11,8 +11,8 @@ export const expensesRouter = Router();
 
 const toApi = (row) => ({
   id: row.id,
-  amount: row.amount_cents / 100,
-  amount_cents: row.amount_cents,
+  amount: row.amount_paise / 100,
+  amount_paise: row.amount_paise,
   description: row.description,
   category_id: row.category_id,
   category_name: row.category_name,
@@ -81,7 +81,7 @@ expensesRouter.post('/', (req, res) => {
   // error handler, so there is no read-then-write race here.
   const info = db
     .prepare(
-      'INSERT INTO expenses (amount_cents, description, category_id, spent_on) VALUES (?, ?, ?, ?)',
+      'INSERT INTO expenses (amount_paise, description, category_id, spent_on) VALUES (?, ?, ?, ?)',
     )
     .run(amount, description, category_id, date);
   res.status(201).json({ data: toApi(selectOne.get(info.lastInsertRowid)) });
@@ -93,9 +93,9 @@ expensesRouter.patch('/:id', (req, res) => {
 
   const patch = updateExpenseSchema.parse(req.body ?? {});
   db.prepare(
-    'UPDATE expenses SET amount_cents = ?, description = ?, category_id = ?, spent_on = ? WHERE id = ?',
+    'UPDATE expenses SET amount_paise = ?, description = ?, category_id = ?, spent_on = ? WHERE id = ?',
   ).run(
-    patch.amount ?? existing.amount_cents,
+    patch.amount ?? existing.amount_paise,
     patch.description ?? existing.description,
     patch.category_id ?? existing.category_id,
     patch.date ?? existing.spent_on,

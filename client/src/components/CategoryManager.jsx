@@ -87,7 +87,7 @@ export default function CategoryManager({ categories, onChange }) {
             <input
               type="text"
               inputMode="decimal"
-              placeholder="400.00"
+              placeholder="15000.00"
               value={form.monthly_budget}
               onChange={(e) => setForm({ ...form, monthly_budget: e.target.value })}
             />

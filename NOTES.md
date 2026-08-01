@@ -20,9 +20,10 @@ The things I had to correct:
   `amount is required and must be a number`.
 - **Two UI bugs that only showed up when I actually looked at the rendered page.** A global `button`
   rule set `color: #fff`, which the inactive tab buttons inherited on top of a white background —
-  they rendered as blank white rectangles. And `toLocaleString(undefined, { currency: 'USD' })`
-  renders `US$27.83` rather than `$27.83` under a non-US locale. Neither breaks a build or a test;
-  both are obvious in a screenshot.
+  they rendered as blank white rectangles. And `toLocaleString(undefined, …)` formats against
+  whatever locale the *viewer's* browser reports, so the same amount renders differently on different
+  machines; pinning it to `en-IN` fixed that and got lakh grouping (`₹1,23,456.00`) as well. Neither
+  breaks a build or a test; both are obvious in a screenshot.
 - **The seed data didn't demonstrate the feature it exists for.** The first pass produced 81 rows and
   budgets that no category actually exceeded, so the over-budget flag — the one part of the summary
   the brief specifically asks for — was invisible on a fresh install. I retuned the per-month counts
@@ -35,19 +36,19 @@ to come back identical.
 
 ## 2. Briefly describe your database schema and one tradeoff you made in designing it.
 
-Two tables. `categories` has `id`, a unique `name`, and a nullable `monthly_budget_cents`.
-`expenses` has `id`, `amount_cents`, `description`, a `category_id` foreign key, and `spent_on` as an
+Two tables. `categories` has `id`, a unique `name`, and a nullable `monthly_budget_paise`.
+`expenses` has `id`, `amount_paise`, `description`, a `category_id` foreign key, and `spent_on` as an
 ISO `YYYY-MM-DD` string. Indexes on `expenses(spent_on)` and `expenses(category_id, spent_on)` cover
 the date-range and category filters. `PRAGMA foreign_keys = ON` at startup, since SQLite otherwise
 ignores foreign keys entirely and the `ON DELETE RESTRICT` in my schema would be decorative.
 
-**The tradeoff: money is an integer number of cents, not a decimal or a float.** SQLite has no
+**The tradeoff: money is an integer number of paise, not a decimal or a float.** SQLite has no
 `DECIMAL` type — it would store `REAL`, and floating-point money accumulates rounding error under
-`SUM()`. Integer cents makes aggregation exact and comparison against a budget trivial. The cost is
+`SUM()`. Integer paise makes aggregation exact and comparison against a budget trivial. The cost is
 that every boundary has to convert: the API divides by 100 on the way out and rounds on the way in,
-and anyone querying the database directly sees `83739` where they expect `837.39`. I think that's the
-right trade — the conversion is two lines in one place, whereas float drift is a bug you find in
-production, in someone's expense report.
+and anyone querying the database directly sees `2197660` where they expect `21,976.60`. I think
+that's the right trade — the conversion is two lines in one place, whereas float drift is a bug you
+find in production, in someone's expense report.
 
 A second, smaller tradeoff: `category_id` is `NOT NULL`, so there is no "uncategorised" bucket. That
 keeps the summary honest — per-category totals always add up to the overall total — but it's what
@@ -70,13 +71,13 @@ Roughly in the order they'd hurt:
    an explicit opt-in, or serving an approximate/cached one.
 3. **The summary aggregation.** One month of a million-expense dataset is tens of thousands of rows
    summed on every page load. First fix is cheap: a covering index on
-   `(category_id, spent_on, amount_cents)` so the `GROUP BY` is index-only and never touches the
+   `(category_id, spent_on, amount_paise)` so the `GROUP BY` is index-only and never touches the
    table. If that isn't enough, a `monthly_category_totals` rollup table maintained on write (or by a
    trigger) turns the summary into a handful of row reads — at the cost of having to keep the rollup
    correct through edits, deletes, and category reassignment.
 4. **SQLite's single writer.** WAL mode gives concurrent readers, but writes serialise. Fine for one
    team; not fine for a whole company logging expenses at once. That's the point where I'd move to
-   PostgreSQL — the schema ports almost unchanged, with `NUMERIC(12,2)` or `BIGINT` cents and a real
+   PostgreSQL — the schema ports almost unchanged, with `NUMERIC(12,2)` or `BIGINT` paise and a real
    `DATE` type.
 
 Also worth naming, though further out: the frontend loads every category to populate its dropdowns,
@@ -88,9 +89,10 @@ expenses are historical and could live in a colder table.
 - **Authentication and multi-team scoping.** Explicitly out of scope in the brief. The schema would
   need a `teams` table and a `team_id` on both tables, plus that column in every index and `WHERE`
   clause — a real change, not a bolt-on, which is exactly why I didn't half-do it.
-- **Currency.** Everything is USD, formatted with a hard-coded locale. Real multi-currency means
-  storing a currency code per expense and deciding what a mixed-currency total even means (a rate
-  table, and rates at time-of-spend rather than time-of-report). That's a feature, not a formatting
+- **Currency.** Everything is INR, stored as paise and formatted with a hard-coded `en-IN` locale.
+  Real multi-currency means storing a currency code per expense, per-currency minor-unit precision
+  (not every currency has 100 subunits), and deciding what a mixed-currency total even means — a rate
+  table, with rates at time-of-spend rather than time-of-report. That's a feature, not a formatting
   detail.
 - **Automated tests.** I verified the validation, the delete policy, the pagination contract, and the
   aggregate totals by hand against the running API, and drove the UI end-to-end in a browser. With

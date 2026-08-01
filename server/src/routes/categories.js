@@ -9,8 +9,8 @@ const toApi = (row) => ({
   id: row.id,
   name: row.name,
   monthly_budget:
-    row.monthly_budget_cents === null ? null : row.monthly_budget_cents / 100,
-  monthly_budget_cents: row.monthly_budget_cents,
+    row.monthly_budget_paise === null ? null : row.monthly_budget_paise / 100,
+  monthly_budget_paise: row.monthly_budget_paise,
   created_at: row.created_at,
 });
 
@@ -25,7 +25,7 @@ categoriesRouter.get('/', (_req, res) => {
 categoriesRouter.post('/', (req, res) => {
   const { name, monthly_budget } = createCategorySchema.parse(req.body ?? {});
   const info = db
-    .prepare('INSERT INTO categories (name, monthly_budget_cents) VALUES (?, ?)')
+    .prepare('INSERT INTO categories (name, monthly_budget_paise) VALUES (?, ?)')
     .run(name, monthly_budget);
   res.status(201).json({ data: toApi(selectOne.get(info.lastInsertRowid)) });
 });
@@ -37,12 +37,12 @@ categoriesRouter.patch('/:id', (req, res) => {
   const patch = updateCategorySchema.parse(req.body ?? {});
   const next = {
     name: patch.name ?? existing.name,
-    monthly_budget_cents:
-      'monthly_budget' in patch ? patch.monthly_budget : existing.monthly_budget_cents,
+    monthly_budget_paise:
+      'monthly_budget' in patch ? patch.monthly_budget : existing.monthly_budget_paise,
   };
-  db.prepare('UPDATE categories SET name = ?, monthly_budget_cents = ? WHERE id = ?').run(
+  db.prepare('UPDATE categories SET name = ?, monthly_budget_paise = ? WHERE id = ?').run(
     next.name,
-    next.monthly_budget_cents,
+    next.monthly_budget_paise,
     existing.id,
   );
   res.json({ data: toApi(selectOne.get(existing.id)) });

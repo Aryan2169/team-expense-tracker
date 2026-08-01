@@ -4,16 +4,16 @@
 CREATE TABLE IF NOT EXISTS categories (
   id                   INTEGER PRIMARY KEY AUTOINCREMENT,
   name                 TEXT NOT NULL UNIQUE COLLATE NOCASE,
-  -- Nullable: a category may have no budget at all. Stored in cents.
-  monthly_budget_cents INTEGER CHECK (monthly_budget_cents IS NULL OR monthly_budget_cents >= 0),
+  -- Nullable: a category may have no budget at all. Stored in paise.
+  monthly_budget_paise INTEGER CHECK (monthly_budget_paise IS NULL OR monthly_budget_paise >= 0),
   created_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS expenses (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
-  -- Money is an integer number of cents, never a float: SUM() over REAL
+  -- Money is an integer number of paise, never a float: SUM() over REAL
   -- accumulates binary rounding error, and 0.1 + 0.2 != 0.3 in any language.
-  amount_cents INTEGER NOT NULL CHECK (amount_cents > 0),
+  amount_paise INTEGER NOT NULL CHECK (amount_paise > 0),
   description  TEXT NOT NULL CHECK (length(trim(description)) > 0),
   category_id  INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
   -- SQLite has no date type. ISO 'YYYY-MM-DD' sorts and range-compares

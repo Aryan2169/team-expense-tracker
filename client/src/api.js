@@ -59,13 +59,14 @@ export const api = {
   summary: (params) => request(`/summary${qs(params)}`),
 };
 
-// Pinned to en-US rather than the browser locale: with an unrelated locale the
-// same call renders "US$27.83". Single-currency app, so a fixed format is the
-// honest choice - see NOTES.md on multi-currency being out of scope.
+// Pinned to en-IN rather than the browser locale, which would render the same
+// number as "₹27.83" or "INR 27.83" depending on where the viewer is. en-IN
+// also gives lakh/crore digit grouping: ₹1,23,456.00, not ₹123,456.00.
+// Single-currency app - see NOTES.md on multi-currency being out of scope.
 export const money = (n) =>
   n === null || n === undefined
     ? '—'
-    : n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    : n.toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
 
 export const todayISO = () => {
   const d = new Date();
